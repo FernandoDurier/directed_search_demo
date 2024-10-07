@@ -60,11 +60,9 @@ city_positions = {
     'Iasi': (350, 500), 'Neant': (380, 550)
 }
 
-
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Pathfinding from Arad to Bucharest")
 font = pygame.font.SysFont(None, 24)
-
 
 # Drawing utilities
 def draw_graph(graph, visited, path):
@@ -97,7 +95,6 @@ def draw_graph(graph, visited, path):
     pygame.display.flip()
     pygame.time.delay(DELAY_MS)
 
-
 # BFS Algorithm
 def bfs(graph, start, goal):
     queue = deque([(start, [start])])
@@ -124,7 +121,6 @@ def bfs(graph, start, goal):
         
         draw_graph(graph, visited, path)  # Draw progress
     return None, 0
-
 
 # DFS Algorithm
 def dfs(graph, start, goal):
@@ -153,7 +149,6 @@ def dfs(graph, start, goal):
         draw_graph(graph, visited, path)  # Draw progress
     return None, 0
 
-
 # UCS Algorithm
 def ucs(graph, start, goal):
     queue = [(0, start, [start])]
@@ -180,61 +175,98 @@ def ucs(graph, start, goal):
         draw_graph(graph, visited, path)  # Draw progress
     return None, 0
 
-
 # A* Algorithm
 def a_star(graph, start, goal):
-    # A heuristic function: straight line distance approximation
-    def heuristic(city):
-        return distances_to_bucharest[city]
-
-    queue = [(0, start, [start])]
+    open_set = [(0, start, [start])]
+    g_costs = {start: 0}
     visited = set()
     visited_count = 0  # Count of visited nodes
     expanded_count = 0  # Count of expanded nodes
     
-    while queue:
-        cost, current_city, path = heapq.heappop(queue)
+    while open_set:
+        f_cost, current_city, path = heapq.heappop(open_set)
         expanded_count += 1  # We are expanding this node
         
         if current_city == goal:
             print(f"A*: Visited {visited_count} nodes, Expanded {expanded_count} nodes.")
-            return path, cost
+            return path, g_costs[current_city]
 
         if current_city not in visited:
             visited.add(current_city)
             visited_count += 1
 
         for neighbor, neighbor_cost in graph[current_city].items():
-            if neighbor not in visited:
-                total_cost = cost + neighbor_cost + heuristic(neighbor)
-                heapq.heappush(queue, (total_cost, neighbor, path + [neighbor]))
-
+            tentative_g_cost = g_costs[current_city] + neighbor_cost
+            
+            if neighbor not in g_costs or tentative_g_cost < g_costs[neighbor]:
+                g_costs[neighbor] = tentative_g_cost
+                f_cost = tentative_g_cost + distances_to_bucharest[neighbor]
+                heapq.heappush(open_set, (f_cost, neighbor, path + [neighbor]))
+        
         draw_graph(graph, visited, path)  # Draw progress
     return None, 0
 
+# Greedy Best-First Search Algorithm
+def gbfs(graph, start, goal):
+    open_set = [(distances_to_bucharest[start], start, [start])]
+    visited = set()
+    visited_count = 0  # Count of visited nodes
+    expanded_count = 0  # Count of expanded nodes
+    
+    while open_set:
+        _, current_city, path = heapq.heappop(open_set)
+        expanded_count += 1  # We are expanding this node
+        
+        if current_city == goal:
+            print(f"GBFS: Visited {visited_count} nodes, Expanded {expanded_count} nodes.")
+            return path, calculate_path_cost(graph, path)
 
-# Utility to calculate path cost
+        if current_city not in visited:
+            visited.add(current_city)
+            visited_count += 1
+
+        for neighbor in graph[current_city]:
+            if neighbor not in visited and neighbor not in [city for _, city, _ in open_set]:
+                heapq.heappush(open_set, (distances_to_bucharest[neighbor], neighbor, path + [neighbor]))
+        
+        draw_graph(graph, visited, path)  # Draw progress
+    return None, 0
+
+# Calculate total path cost
 def calculate_path_cost(graph, path):
     total_cost = 0
     for i in range(len(path) - 1):
         total_cost += graph[path[i]][path[i + 1]]
     return total_cost
 
-
-# Main loop to run algorithms and display results
+# Main loop
 def main():
-    algorithms = [("BFS", bfs), ("DFS", dfs), ("UCS", ucs), ("A*", a_star)]
-    start_city, goal_city = "Arad", "Bucharest"
+    start_city = 'Arad'
+    goal_city = 'Bucharest'
+    running = True
+    
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+        
+        # Run algorithms one after the other
+        bfs_path, bfs_cost = bfs(romania_map, start_city, goal_city)
+        dfs_path, dfs_cost = dfs(romania_map, start_city, goal_city)
+        ucs_path, ucs_cost = ucs(romania_map, start_city, goal_city)
+        a_star_path, a_star_cost = a_star(romania_map, start_city, goal_city)
+        gbfs_path, gbfs_cost = gbfs(romania_map, start_city, goal_city)
 
-    for name, algorithm in algorithms:
-        print(f"Running {name}...")
-        path, total_cost = algorithm(romania_map, start_city, goal_city)
-        print(f"Path found by {name}: {path} with total cost: {total_cost}")
-        draw_graph(romania_map, path, path)  # Final path display
-        pygame.time.delay(2000)  # Pause for 2 seconds before next algorithm
+        print("Results:")
+        print(f"BFS Path: {bfs_path}, Cost: {bfs_cost}")
+        print(f"DFS Path: {dfs_path}, Cost: {dfs_cost}")
+        print(f"UCS Path: {ucs_path}, Cost: {ucs_cost}")
+        print(f"A* Path: {a_star_path}, Cost: {a_star_cost}")
+        print(f"GBFS Path: {gbfs_path}, Cost: {gbfs_cost}")
+
+        running = False  # Stop after running all algorithms
 
     pygame.quit()
-
 
 if __name__ == "__main__":
     main()
