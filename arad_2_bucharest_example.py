@@ -16,7 +16,7 @@ VISITED_COLOR = (255, 0, 0)  # Red for visited nodes
 PATH_COLOR = (0, 255, 0)  # Green for the final path
 FONT_COLOR = (0, 0, 0)  # Black for text
 NODE_RADIUS = 20  # Radius of nodes for drawing
-DELAY_MS = 500  # Delay in milliseconds for animation
+DELAY_MS = 1000  # Delay in milliseconds for animation
 
 # Graph representing Romania's map with distances between cities
 romania_map = {
