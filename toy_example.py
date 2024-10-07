@@ -16,7 +16,7 @@ VISITED_COLOR = (255, 0, 0)  # Red for visited nodes
 PATH_COLOR = (0, 255, 0)  # Green for the final path
 FONT_COLOR = (0, 0, 0)  # Black for text
 NODE_RADIUS = 20  # Radius of nodes for drawing
-DELAY_MS = 500  # Delay in milliseconds for animation
+DELAY_MS = 1000  # Delay in milliseconds for animation
 
 # Graph representing Romania's map with distances between cities
 romania_map = {
@@ -210,6 +210,32 @@ def dijkstra(graph, start, goal):
     print("Dijkstra: No path found.")  # If the queue is empty and goal not reached
     return None, float('inf')  # Return None and infinite cost
 
+# Greedy Best-First Search Algorithm
+def gbfs(graph, start, goal):
+    open_set = [(distances_to_bucharest[start], start, [start])]
+    visited = set()
+    visited_count = 0  # Count of visited nodes
+    expanded_count = 0  # Count of expanded nodes
+    
+    while open_set:
+        _, current_city, path = heapq.heappop(open_set)
+        expanded_count += 1  # We are expanding this node
+        
+        if current_city == goal:
+            print(f"GBFS: Visited {visited_count} nodes, Expanded {expanded_count} nodes.")
+            return path, calculate_path_cost(graph, path)
+
+        if current_city not in visited:
+            visited.add(current_city)
+            visited_count += 1
+
+        for neighbor in graph[current_city]:
+            if neighbor not in visited and neighbor not in [city for _, city, _ in open_set]:
+                heapq.heappush(open_set, (distances_to_bucharest[neighbor], neighbor, path + [neighbor]))
+        
+        draw_graph(graph, visited, path)  # Draw progress
+    return None, 0
+
 # A* Algorithm implementation
 def a_star(graph, start, goal):
     queue = [(0 + distances_to_bucharest[start], start, [start])]  # Initialize the priority queue with cost + heuristic
@@ -242,7 +268,7 @@ def a_star(graph, start, goal):
 # Main function to run the pathfinding algorithms
 def main():
     # Execute all pathfinding algorithms and visualize the results
-    algorithms = [bfs, dfs, ucs, dijkstra, a_star]  # List of algorithms to run
+    algorithms = [bfs, dfs, ucs, dijkstra, gbfs, a_star]  # List of algorithms to run
     start_city = 'A'  # Starting city
     goal_city = 'E'  # Goal city
 
